@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>File Inventory</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        #spinner {
+            font-weight: bold;
+            color: #555;
+            margin-top: 10px;
+        }
+        table {
+            width: 100%;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Top 500 Files</h2>
+
+    <button id="startScanBtn">🔍 Start Scan</button>
+    <div id="spinner" style="display:none;">⏳ Scanning files...</div>
+
+    <br><br>
+
+    <a href="/download" download style="display:inline-block; margin-bottom:15px;">⬇️ Download Full CSV</a>
+
+    <label for="extensionFilter" style="margin-left:15px;">Filter by Extension:</label>
+    <select id="extensionFilter">
+        <option value="">All</option>
+        <option value=".mp3">.mp3</option>
+        <option value=".wav">.wav</option>
+        <option value=".aiff">.aiff</option>
+        <option value=".txt">.txt</option>
+        <option value=".csv">.csv</option>
+    </select>
+
+    <table id="fileTable" class="display">
+        <thead>
+            <tr id="tableHeader"></tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+
+    <script>
+        let table;
+
+        function buildTable(data) {
+            const headers = Object.keys(data[0]);
+            const headerRow = headers.map(col => `<th>${col}</th>`).join('');
+            $('#tableHeader').html(headerRow);
+
+            const rows = data.map(row => {
+                return `<tr>${headers.map(col => `<td>${row[col]}</td>`).join('')}</tr>`;
+            }).join('');
+            $('#tableBody').html(rows);
+
+            if ($.fn.DataTable.isDataTable('#fileTable')) {
+                table.destroy();
+            }
+
+            table = $('#fileTable').DataTable({
+                "pageLength": 25,
+                "order": [[1, 'desc']]
+            });
+
+            $('#extensionFilter').on('change', function () {
+                const ext = $(this).val();
+                if (ext) {
+                    table.column(0).search('\\' + ext + '$', true, false).draw();
+                } else {
+                    table.column(0).search('').draw();
+                }
+            });
+        }
+
+        function pollScanStatus() {
+            $.get('/scan-status', function (res) {
+                if (res.status === 'in_progress') {
+                    $('#spinner').show();
+                    setTimeout(pollScanStatus, 1000);
+                } else if (res.status === 'done') {
+                    $('#spinner').hide();
+                    buildTable(res.data);
+                } else {
+                    $('#spinner').hide();
+                }
+            });
+        }
+
+        $(document).ready(function () {
+            $('#startScanBtn').on('click', function () {
+                $('#spinner').show();
+                $.get('/start-scan', function () {
+                    pollScanStatus();
+                });
+            });
+        });
+    </script>
+
+</body>
+</html>

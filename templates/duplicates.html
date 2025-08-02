@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Duplicate Files</title>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+</head>
+<body>
+    <h2>Duplicate Files Detected</h2>
+    <a href="/">← Back to Inventory</a>
+    <table id="dupTable" class="display" style="margin-top: 15px;">
+        <thead>
+            <tr>
+                <th>Hash</th>
+                <th>Path</th>
+                <th>Size</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in duplicates %}
+                <tr>
+                    <td>{{ row['Hash'] }}</td>
+                    <td>{{ row['Path'] }}</td>
+                    <td>{{ row['Size'] }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <script>
+        $(document).ready(function () {
+            $('#dupTable').DataTable({
+                "pageLength": 25
+            });
+        });
+    </script>
+</body>
+</html>
